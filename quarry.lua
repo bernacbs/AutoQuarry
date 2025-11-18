@@ -1,18 +1,9 @@
 --Civilwargeeky's Quarry Program--
-  VERSION = "3.6.4.5"
+--Modded by Mexycbs--
+  VERSION = "3.6.6"
 --[[
 Recent Changes:
-  Parameter Files! Create a file of parameters, and use -file to load it!
-    Works will with -forcePrompt
-  Quarry no longer goes to start at end of row!
-  Turtle can go left!
-  QuadCopters! Check Lyqyd's thread
-New Parameters:
-    -overfuel/fuelMultiplier [number]: This number is is what neededFuel is multiplied by when fuel is low.
-    -version: This will display the current version number and end the program
-    -file [fileName]: This will load a custom configuration file (basically a list of parameters). "##" starts comment lines. In the future "#" will start programs to run (but only through shell)
-    -preciseTotals [t/f]: If true, turtle will write exactly what it mined to the logs. It may also transmit it over rednet.
-    -forcePrompt [param]: This will add to a list of parameters to force prompt for. So if you say "-forcePrompt doRefuel" it will prompt you "Length","Width","Height","Invert","Do Refuel" etc.
+  breakBlacklist > Added param break (or not) block from blacklist. 
 ]]
 --Defining things
 civilTable = nil; _G.civilTable = {}; setmetatable(civilTable, {__index = getfenv()}); setfenv(1,civilTable)
@@ -51,6 +42,7 @@ preciseTotals = false --If true, will record exact totals and names for all mate
 goLeftNotRight = false --Quarry to left, not right (parameter is "left") [Default false]
 oreQuarry = false --Enables ore quarry functionality [Default false]
 oreQuarryBlacklistName = "oreQuarryBlacklist.txt" --This is the file that will be parsed for item names [Default "oreQuarryBlacklist"]
+breakBlacklist = true --If enable break block up, down and in front of turtle that are on Blacklist [Default true]
 dumpCompareItems = true --If ore quarry, the turtle will dump items compared to (like cobblestone) [Default true]
 frontChest = false --If oreQuarry and chest checking, you can turn this on to make turtle check in front of itself for chests as well [Default false]
 lavaBuffer = 500 --If using a lava bucket, this is the buffer it will wait for before checking for lava [Default 500]
@@ -91,6 +83,7 @@ Welcome!: Welcome to quarry help. Below are help entries for all parameters. Exa
   
   Note: If you have bspkrsCore, look 
   for "UniqueNames.txt" in your config
+-breakBlacklist: [t/f] If enable break block up, down and in front of turtle that are on Blacklist
 -file: [file name] Will load a file of parameters. One parameter per line. # is a comment line (See the forum thread for more detailed directions)
 -atChest: [force] This is for use with "-restore," this will tell the restarting turtle that it is at its home chest, so that if it had gotten lost, it now knows where it is.
 -doRefuel: [t/f] If true, the turtle will refuel itself with coal and planks it finds on its mining run
@@ -700,6 +693,7 @@ paramAlias("extraDropItems","extraDumpItems") --changed to Dump
 addParam("compareChest","Compare Chest Slot","slot 13", nil, oldOreQuarry)
 addParam("frontChest","Front Chest Check","boolean", nil, compareChest or turtle.insepect) --Does not need oreQuarry, but is similar (does need inspect if not compareChest)
 --New Ore
+addParam("breakBlacklist", "Break Blacklist", "boolean")
 addParam("blacklist","Ore Blacklist", "string", nil, oreQuarry, "oreQuarryBlacklistName")
 paramAlias("blacklist","blacklistFile")
 --Mod Related
@@ -1567,7 +1561,11 @@ function dig(doAdd, mineFunc, inspectFunc, suckDir) --Note, turtle will not both
   if oreQuarry and inspectFunc then
     local worked, data = inspectFunc()
     if data then
-      mineFlag = not blacklist[data.name]
+      if breakBlacklist then
+        mineFlag = true
+      elseif 
+        mineFlag = not blacklist[data.name]
+      end
       if data.name == chestID then
         emptyChest(suckDir)
       end
