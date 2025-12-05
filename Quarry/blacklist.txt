@@ -61,6 +61,7 @@ create:veridium
 create:scoria
 create:scorchia
 twigs:rhyolite
+twigs:schist
 twigs:pebble
 lootr:lootr_chest
 lootr:lootr_barrel
