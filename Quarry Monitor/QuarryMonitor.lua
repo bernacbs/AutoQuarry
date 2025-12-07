@@ -1544,7 +1544,7 @@ while continue do
       end
        
       if rec then
-        rec.distance = math.floor(rec.distance)
+        rec.distance = 0
         rec.label = rec.label or "Quarry!"
         screen.rec = rec --Set the table
         --Updating screen occurs outside of the if

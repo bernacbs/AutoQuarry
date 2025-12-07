@@ -1,6 +1,6 @@
 --Civilwargeeky's Quarry Program--
 --Modded by Mexycbs--
-  VERSION = "3.6.6"
+  VERSION = "3.6.4.5.269"
 --[[
 Recent Changes:
   breakBlacklist > Added param break (or not) block from blacklist. 
@@ -23,7 +23,7 @@ keepOpen = 1 --How many inventory slots it will attempt to keep open at all time
 fuelSafety = "moderate" --How much fuel it will ask for: safe, moderate, and loose [Default moderate]
 excessFuelAmount = math.huge --How much fuel the turtle will get maximum. Limited by turtle.getFuelLimit in recent CC [Default math.huge]
 fuelMultiplier = 1 --How much extra fuel turtle will ask for when it does need fuel [Default 1]
-saveFile = "Civil_Quarry_Restore" --Where it saves restore data [Default "Civil_Quarry_Restore"]
+saveFile = "Quarry_Restore.bkp" --Where it saves restore data [Default "Quarry_Restore.bkp"]
 autoResume = true --If true, turtle will auto-restart when loaded. [Default true]
 startupRename = "oldStartup.quarry" --What the startup is temporarily renamed to [Default "oldStartup.quarry"]
 startupName = "startup" --What the turtle auto-resumes with [Default "startup"]
@@ -35,13 +35,13 @@ gpsTimeout = 3 --The number of seconds the program will wait to get GPS coords. 
 legacyRednet = false --Use this if playing 1.4.7
 logging = true --Whether or not the turtle will log mining runs. [Default ...still deciding]
 logFolder = "Quarry_Logs" --What folder the turtle will store logs in [Default "Quarry_Logs"]
-logExtension = "" --The extension of the file (e.g. ".txt") [Default ""]
+logExtension = ".log" --The extension of the file (e.g. ".txt") [Default ".log"]
 flatBedrock = false --If true, will go down to bedrock to set startDown [Default false]
 startDown = 0 --How many blocks to start down from the top of the mine [Default 0]
 preciseTotals = false --If true, will record exact totals and names for all materials [Default false]
 goLeftNotRight = false --Quarry to left, not right (parameter is "left") [Default false]
 oreQuarry = false --Enables ore quarry functionality [Default false]
-oreQuarryBlacklistName = "oreQuarryBlacklist.txt" --This is the file that will be parsed for item names [Default "oreQuarryBlacklist"]
+oreQuarryBlacklistName = "blacklist.txt" --This is the file that will be parsed for item names [Default "oreQuarryBlacklist"]
 breakBlacklist = true --If enable break block up, down and in front of turtle that are on Blacklist [Default true]
 dumpCompareItems = true --If ore quarry, the turtle will dump items compared to (like cobblestone) [Default true]
 frontChest = false --If oreQuarry and chest checking, you can turn this on to make turtle check in front of itself for chests as well [Default false]
@@ -59,7 +59,7 @@ channels = {
 send = os.getComputerID() + 1  ,
 receive = os.getComputerID() + 101 ,
 confirm = "Turtle Quarry Receiver",
-message = "Civil's Quarry",
+message = "Civil's Quarry - Modded by Mexy",
 fingerprint = "quarry"
 }
 
@@ -145,8 +145,10 @@ Examples [2]:
   Okay, so you've got the basics of this now, so if you want, you can type in really long strings of stuff to make the quarry do exactly what you want. Now, say you want a 40x20x9, but you want it to go down to diamond level, and you're on the surface (at y = 64). You also want it to send rednet messages to your computer so you can see how its doing.
 Examples [2] [cont.]:
   Oh yeah! You also want it to use an ender chest in slot 12 and restart if the server crashes. Yeah, you can do that. You would type
-  "quarry -dim 40x20x9 -invert false -startDown 45 -rednet true -enderChest 12 -restore"
+  "quarry -dim 40 20 9 -invert false -startDown 45 -rednet true -enderChest 12 -restore"
   BAM. Now you can just let that turtle do it's thing
+Ecamples [3]:
+  Now, imagine you're a hardcore player. You want something very precise and with your specific features. So, first you need it to worry about storing broken blocks (-oreQuarry true), you need a list of blocks (blacklist.txt) that the quarry should discard and break (-breakBlacklist true) (anything not on this list it will place in the chest above it (-chest top)). Furthermore, you want to use any type of fuel for the quarry (-doRefuel true) and you want it to remove any lava in its path, so you must place an empty bucket in its bottom-right slot 16 (-lava 16). You want it to resume working if you leave the world (-autoRestore). You want it to go down 10 blocks before starting (-startDown 0), you want to save a history of all broken blocks (-preciseTotals true) and send useful information to a monitor (-rednet true), remembering that you need to set up a QuarryMonitor. Therefore, the command line to start it will be: "quarry -chest top -dim 16 16 20 -oreQuarry true -preciseTotals true -invert false -rednet true -doRefuel true -startDown 10 -breakBlacklist true -lava 16 -autoRestore"
 Tips:
   The order of the parameters doesn't matter. "quarry -invert false -rednet true" is the same as "quarry -rednet true -invert false"
   
@@ -311,6 +313,7 @@ term.setCursorPos(xPos,yPos); term.clearLine(); end
 
 screen(1,1)
 print("----- Welcome to Quarry! -----")
+print("------- Modded by Mexy -------")
 print("")
 
 local sides = {top = "top", right = "right", left = "left", bottom = "bottom", front = "front"} --Used to whitelist sides
@@ -725,8 +728,10 @@ local function doAutoResumeStuff()
   local file = fs.open(startupName,"w") --Startup File
   file.writeLine( --The below is on the left because spacing
 [[
---This is an auto-generated startup
+--This is an auto-generated Quarry startup
 --Made by civilwargeeky's Variable Size Quarry
+--Modded by Mexycbs
+shell.run("clear")
 print("Now Resuming Quarry")
 print("Press any key to quit. You have 5 seconds.")
 function deleteStuff()
@@ -738,16 +743,23 @@ end
 local event
 if fs.exists("]]..saveFile..[[") then
   for i=5,1,-1 do
+    term.setCursorPos(1,6)
+    if i < 10 then
+	    term.write(" ")	
+	  end
     print(i)
     os.startTimer(1)
     event = os.pullEvent()
-    if event == "key" then break end
+    if event == "key" then 
+      deleteStuff()
+      break 
+    end
   end
   if event == "timer" then
+    print("Starting...")
     os.run({},"]]..shell.getRunningProgram()..[[","-resume")
   else
-
-    deleteStuff()
+	  print("Key was pressed! Stopped!")
   end
 else
   print("Never mind, no save file found")
@@ -760,8 +772,7 @@ if autoResume and not restoreFoundSwitch then --Don't do for restore because wou
   doAutoResumeStuff()
 end
 --oreQuarry blacklist
-local blacklist = { "minecraft:air",  "minecraft:bedrock", "minecraft:cobblestone", "minecraft:dirt", "minecraft:ice", "minecraft:ladder", "minecraft:netherrack", "minecraft:sand", "minecraft:sandstone",
-  "minecraft:snow", "minecraft:snow_layer", "minecraft:stone", "minecraft:gravel", "minecraft:grass", "minecraft:torch" }
+local blacklist = { "minecraft:air",  "minecraft:bedrock" }
 for a,b in pairs(copyTable(blacklist)) do
   blacklist[b], blacklist[a] = true, nil --Switch
 end
@@ -796,35 +807,35 @@ end
 
 
 local function saveProgress(extras) --Session persistence
-exclusions = { modem = true, shell = true, _ENV = true}
-if doBackup then
-local toWrite = ""
-for a,b in pairs(getfenv(1)) do
-  if not exclusions[a] then
-      --print(a ,"   ", b, "   ", type(b)) --Debug
-    if type(b) == "string" then b = "\""..b.."\"" end
-    if type(b) == "table" then b = textutils.serialize(b) end
-    if type(b) ~= "function" then
-      toWrite = toWrite..a.." = "..tostring(b).."\n"
+  exclusions = { modem = true, shell = true, _ENV = true}
+  if doBackup then
+    local toWrite = ""
+    for a,b in pairs(getfenv(1)) do
+      if not exclusions[a] then
+          --print(a ,"   ", b, "   ", type(b)) --Debug
+        if type(b) == "string" then b = "\""..b.."\"" end
+        if type(b) == "table" then b = textutils.serialize(b) end
+        if type(b) ~= "function" then
+          toWrite = toWrite..a.." = "..tostring(b).."\n"
+        end
+      end
     end
+    toWrite = toWrite.."doCheckFuel = false\n" --It has already used fuel, so calculation unnecessary
+    local file
+    repeat
+      file = fs.open(saveFile,"w")
+    until file
+    file.write(toWrite)
+    if type(extras) == "table" then
+      for a, b in pairs(extras) do
+        file.write(a.." = "..tostring(b).."\n")
+      end
+    end
+    if checkFuel() ~= math.huge then --Used for location comparing
+      file.write("fuelLevel = "..tostring(checkFuel()).."\n")
+    end
+    file.close()
   end
-end
-toWrite = toWrite.."doCheckFuel = false\n" --It has already used fuel, so calculation unnecessary
-local file
-repeat
-  file = fs.open(saveFile,"w")
-until file
-file.write(toWrite)
-if type(extras) == "table" then
-  for a, b in pairs(extras) do
-    file.write(a.." = "..tostring(b).."\n")
-  end
-end
-if checkFuel() ~= math.huge then --Used for location comparing
-  file.write("fuelLevel = "..tostring(checkFuel()).."\n")
-end
-file.close()
-end
 end
 
 local area = x*z
@@ -1033,7 +1044,8 @@ end
 if rednetEnabled then
   screen(1,1)
   print("Rednet is Enabled")
-  print("The Channel to open is "..channels.send)
+  print("The channel open is "..channels.send)
+  print("Waiting for Monitor connection...")
   if peripheral.find then
     modem = peripheral.find("modem")
   else
@@ -1224,26 +1236,26 @@ function display() --This is just the last screen that displays at the end
   end
 end
 function updateDisplay() --Runs in Mine(), display information to the screen in a certain place
-screen(1,1)
-print("Blocks Mined")
-print(mined)
-print("Percent Complete")
-print(percent.."%")
-print("Fuel")
-print(checkFuel())
-  -- screen(1,1)
-  -- print("Xpos: ")
-  -- print(xPos)
-  -- print("RelXPos: ")
-  -- print(relxPos)
-  -- print("Z Pos: ")
-  -- print(zPos)
-  -- print("Y pos: ")
-  -- print(yPos)
-if rednetEnabled then
-screenLine(1,7)
-print("Connected: "..tostring(connected))
-end
+  screen(1,1)
+  print("Blocks Mined")
+  print(mined)
+  print("Percent Complete")
+  print(percent.."%")
+  print("Fuel")
+  print(checkFuel())
+    -- screen(1,1)
+    -- print("Xpos: ")
+    -- print(xPos)
+    -- print("RelXPos: ")
+    -- print(relxPos)
+    -- print("Z Pos: ")
+    -- print(zPos)
+    -- print("Y pos: ")
+    -- print(yPos)
+  if rednetEnabled then
+    screenLine(1,7)
+    print("Connected: "..tostring(connected))
+  end
 end
 --Utility functions
 local function pad(str, length, side)
@@ -1539,9 +1551,13 @@ end
 function lavaRefuel(suckDir)
   if checkFuel() + lavaBuffer >= checkFuelLimit() then return false end -- we don't want to constantly over-fuel the turtle.
   local suckFunc
-  if suckDir == "up" then suckFunc = turtle.placeUp
-  elseif suckDir == "down" then suckFunc = turtle.placeDown
-  else suckFunc = turtle.place end
+  if suckDir == "up" then
+    suckFunc = turtle.placeUp
+  elseif suckDir == "down" then
+    suckFunc = turtle.placeDown
+  else
+    suckFunc = turtle.place
+  end
   
   select(specialSlots.lavaBucket)
   if suckFunc() then
@@ -1563,7 +1579,7 @@ function dig(doAdd, mineFunc, inspectFunc, suckDir) --Note, turtle will not both
     if data then
       if breakBlacklist then
         mineFlag = true
-      elseif 
+      else 
         mineFlag = not blacklist[data.name]
       end
       if data.name == chestID then
@@ -1745,7 +1761,7 @@ end
 
 
 
-function mine(doDigDown, doDigUp, outOfPath,doCheckInv) -- Basic Move Forward
+function mine(doDigDown, doDigUp, outOfPath, doCheckInv) -- Basic Move Forward
   if doCheckInv == nil then doCheckInv = true end
   if doDigDown == nil then doDigDown = true end
   if doDigUp == nil then doDigUp = true end
@@ -1860,22 +1876,22 @@ function checkSanity()
 
     --[[
     print("Oops. Detected that quarry was outside of predefined boundaries.")
-    print("Please go to my forum thread and report this with a short description of what happened")
-    print("If you could also run \"pastebin put Civil_Quarry_Restore\" and give me that code it would be great")
+    print("Please go to my github and report this with a short description of what happened")
+    print("Github: https://raw.githubusercontent.com/bernacbs/AutoQuarry/main/")
     error("",0)]]
   end
 end
 
 local function fromBoolean(input) --Like a calculator
-if input then return 1 end
-return 0
+  if input then return 1 end
+  return 0
 end
 local function multBoolean(first,second) --Boolean multiplication
-return (fromBoolean(first) * fromBoolean(second)) == 1
+  return (fromBoolean(first) * fromBoolean(second)) == 1
 end
 function coterminal(num, limit) --I knew this would come in handy :D
-limit = limit or 4 --This is for facing
-return math.abs((limit*fromBoolean(num < 0))-(math.abs(num)%limit))
+  limit = limit or 4 --This is for facing
+  return math.abs((limit*fromBoolean(num < 0))-(math.abs(num)%limit))
 end
 if tArgs["-manualpos"] then
   facing = coterminal(facing) --Done to improve support for "-manualPos"
@@ -2228,37 +2244,38 @@ end
 --Mining Loops--------------------------------------------------------------------------
 select(1)
 while layersDone <= layers do -------------Height---------
-local lastLayer = layersDone == layers --If this is the last layer
-local secondToLastLayer = (layersDone + 1) == layers --This is a check for going down at the end of a layer.
-moved = moved + 1 --To account for the first position in row as "moved"
-if not(layersDone == layers and not doDigDown) then digDown() end --This is because it doesn't mine first block in layer
-if not restoreFoundSwitch and layersDone % 2 == 1 then rowCheck = true end
-relxCalc()
-while relzPos <= z do -------------Width----------
-while relxPos < x do ------------Length---------
-mine(not lastLayer or (doDigDown and lastLayer), not lastLayer or (doDigUp and lastLayer)) --This will be the idiom that I use for the mine function
-end ---------------Length End-------
-if relzPos ~= z then --If not on last row of section
-  local func
-  if rowCheck == true then --Switching to next row
-  func = "right"; rowCheck = false; else func = false; rowCheck = true end --Which way to turn
-    eventAdd("endOfRowTurn", zPos, facing , {not lastLayer or (doDigDown and lastLayer), not lastLayer or (doDigUp and lastLayer)}) --The table is passed to the mine function
-    runAllEvents()
-else break
-end
-end ---------------Width End--------
-if layersDone % 2 == 0 then --Will only go back to start on non-even layers
-  eventAdd("goto",1,1,yPos,0, "layerStart") --Goto start of layer
-else
-  eventAdd("turnTo",coterminal(facing-2))
-end
-if not lastLayer then --If there is another layer
-  for i=1, 2+fromBoolean(not(lastHeight~=0 and secondToLastLayer)) do eventAdd("down()") end --The fromBoolean stuff means that if lastheight is 1 and last and layer, will only go down two
-end
-eventAdd("relxCalc")
-layersDone = layersDone + 1
-restoreFoundSwitch = false --This is done so that rowCheck works properly upon restore
-runAllEvents()
+  local lastLayer = layersDone == layers --If this is the last layer
+  local secondToLastLayer = (layersDone + 1) == layers --This is a check for going down at the end of a layer.
+  moved = moved + 1 --To account for the first position in row as "moved"
+  if not(layersDone == layers and not doDigDown) then digDown() end --This is because it doesn't mine first block in layer
+  if not restoreFoundSwitch and layersDone % 2 == 1 then rowCheck = true end
+  relxCalc()
+  while relzPos <= z do -------------Width----------
+    while relxPos < x do ------------Length---------
+      mine(not lastLayer or (doDigDown and lastLayer), not lastLayer or (doDigUp and lastLayer)) --This will be the idiom that I use for the mine function
+    end ---------------Length End-------
+    if relzPos ~= z then --If not on last row of section
+      local func
+      if rowCheck == true then --Switching to next row
+      func = "right"; rowCheck = false; else func = false; rowCheck = true end --Which way to turn
+        eventAdd("endOfRowTurn", zPos, facing , {not lastLayer or (doDigDown and lastLayer), not lastLayer or (doDigUp and lastLayer)}) --The table is passed to the mine function
+        runAllEvents()
+    else 
+      break
+    end
+  end ---------------Width End--------
+  if layersDone % 2 == 0 then --Will only go back to start on non-even layers
+    eventAdd("goto",1,1,yPos,0, "layerStart") --Goto start of layer
+  else
+    eventAdd("turnTo",coterminal(facing-2))
+  end
+  if not lastLayer then --If there is another layer
+    for i=1, 2+fromBoolean(not(lastHeight~=0 and secondToLastLayer)) do eventAdd("down()") end --The fromBoolean stuff means that if lastheight is 1 and last and layer, will only go down two
+  end
+  eventAdd("relxCalc")
+  layersDone = layersDone + 1
+  restoreFoundSwitch = false --This is done so that rowCheck works properly upon restore
+  runAllEvents()
 end ---------------Height End-------
 
 endingProcedure() --This takes care of getting to start, dropping in chest, and displaying ending screen
